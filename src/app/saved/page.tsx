@@ -1,74 +1,61 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import MainLayout from "@/components/layout/MainLayout";
 
 export default function SavedPage() {
   const [saved, setSaved] = useState<any[]>([]);
 
-  const fetchSaved = async () => {
-    const token = localStorage.getItem("token");
-
-    const res = await fetch("http://localhost:5000/saved", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ token }),
-    });
-
-    const data = await res.json();
-
-    if (Array.isArray(data)) {
-      setSaved(data);
-    } else {
-      setSaved([]);
-    }
-  };
-
-  const handleRemove = async (name: string) => {
-    const token = localStorage.getItem("token");
-
-    await fetch("http://localhost:5000/remove", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ token, name }),
-    });
-
-    fetchSaved();
-  };
-
   useEffect(() => {
+    const fetchSaved = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Please login first");
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          "https://college-platform-938p.onrender.com/saved",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ token }),
+          }
+        );
+
+        const data = await res.json();
+        console.log("Saved Data:", data);
+
+        setSaved(data);
+
+      } catch (err) {
+        console.error(err);
+        alert("Error loading saved colleges");
+      }
+    };
+
     fetchSaved();
   }, []);
 
   return (
-    <MainLayout>
-      <h1 className="text-2xl font-semibold mb-6">Saved Colleges ❤️</h1>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Saved Colleges</h1>
 
       {saved.length === 0 ? (
-        <p>No saved colleges yet.</p>
+        <p>No saved colleges</p>
       ) : (
-        <div className="grid md:grid-cols-3 gap-4">
-          {saved.map((c, i) => (
-            <div key={i} className="p-4 border rounded-lg bg-white shadow">
-              <h3 className="font-semibold">{c?.name}</h3>
-              <p className="text-sm text-gray-500">{c?.location}</p>
-              <p className="text-orange-500 mt-2">{c?.fees}</p>
-              <p>⭐ {c?.rating}</p>
-
-              <button
-                onClick={() => handleRemove(c.name)}
-                className="mt-3 w-full bg-red-400 text-white py-2 rounded"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-        </div>
+        saved.map((c, i) => (
+          <div key={i} className="border p-4 mb-3 rounded">
+            <h2 className="font-semibold">{c.name}</h2>
+            <p>{c.location}</p>
+            <p>₹{c.fees}</p>
+            <p>⭐ {c.rating}</p>
+          </div>
+        ))
       )}
-    </MainLayout>
+    </div>
   );
 }
