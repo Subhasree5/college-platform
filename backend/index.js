@@ -71,11 +71,34 @@ app.post("/login", async (req, res) => {
 
 
 // ================= SAVE =================
+// ================= SAVE =================
 app.post("/save", async (req, res) => {
   try {
     const { token, college } = req.body;
 
-    const decoded = jwt.verify(token, SECRET);
+    if (!token || !college) {
+      return res.status(400).json({ message: "Missing data" });
+    }
+
+    let decoded;
+
+    try {
+      decoded = jwt.verify(token, SECRET);
+    } catch (err) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    // prevent duplicate save
+    const exists = await prisma.saved.findFirst({
+      where: {
+        email: decoded.email,
+        name: college.name,
+      },
+    });
+
+    if (exists) {
+      return res.json({ message: "Already saved" });
+    }
 
     await prisma.saved.create({
       data: {
@@ -83,39 +106,46 @@ app.post("/save", async (req, res) => {
         name: college.name,
         location: college.location,
         fees: college.fees,
-        rating: college.rating
-      }
+        rating: college.rating,
+      },
     });
 
-    res.json({ message: "Saved" });
+    res.json({ message: "Saved successfully" });
 
   } catch (err) {
-    console.error(err);
+    console.error("SAVE ERROR:", err);
     res.status(500).json({ message: "Save error" });
   }
 });
-
 
 // ================= GET SAVED =================
 app.post("/saved", async (req, res) => {
   try {
     const { token } = req.body;
 
-    const decoded = jwt.verify(token, SECRET);
+    if (!token) {
+      return res.status(400).json({ message: "No token" });
+    }
+
+    let decoded;
+
+    try {
+      decoded = jwt.verify(token, SECRET);
+    } catch {
+      return res.status(401).json({ message: "Invalid token" });
+    }
 
     const data = await prisma.saved.findMany({
-      where: { email: decoded.email }
+      where: { email: decoded.email },
     });
 
     res.json(data);
 
   } catch (err) {
-    console.error(err);
+    console.error("FETCH ERROR:", err);
     res.status(500).json({ message: "Fetch error" });
   }
 });
-
-
 // ================= REMOVE =================
 app.post("/remove", async (req, res) => {
   try {
