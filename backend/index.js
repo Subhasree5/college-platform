@@ -6,7 +6,8 @@ const app = express();
 const prisma = new PrismaClient();
 
 app.use(cors({
-  origin:"*"
+  origin:["http://localhost:3000", "https://college-platform-new.vercel.app"],
+  credentials: true
 }));
 app.use(express.json());
 
