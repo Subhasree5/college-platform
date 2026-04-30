@@ -70,7 +70,16 @@ app.post("/save", async (req, res) => {
       return res.status(400).json({ message: "Missing data" });
     }
 
-    const decoded = jwt.verify(token, SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, SECRET);
+    } catch {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    if (!college.name) {
+      return res.status(400).json({ message: "Invalid college data" });
+    }
 
     await prisma.saved.create({
       data: {
@@ -82,13 +91,13 @@ app.post("/save", async (req, res) => {
       },
     });
 
-    res.json({ message: "Saved" });
+    res.json({ message: "Saved successfully" });
+
   } catch (err) {
     console.error("SAVE ERROR:", err);
-    res.status(500).json({ message: "Save error" });
+    res.status(500).json({ message: err.message });
   }
 });
-
 // ================= GET SAVED =================
 app.post("/saved", async (req, res) => {
   try {

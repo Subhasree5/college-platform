@@ -20,4 +20,5 @@ model Saved {
   location String
   fees     Int
   rating   Float
+  @@map("Saved")
 }
