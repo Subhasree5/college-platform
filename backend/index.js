@@ -6,19 +6,14 @@ import jwt from "jsonwebtoken";
 const app = express();
 const prisma = new PrismaClient();
 
-app.use(cors({
-  origin: "*"
-}));
-
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 const SECRET = "college_secret";
 
-// TEST ROUTE
 app.get("/", (req, res) => {
-  res.send("Backend is running 🚀");
+  res.send("Backend running 🚀");
 });
-
 
 // ================= SIGNUP =================
 app.post("/signup", async (req, res) => {
@@ -26,25 +21,23 @@ app.post("/signup", async (req, res) => {
     const { email, password } = req.body;
 
     const existing = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (existing) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({ message: "User exists" });
     }
 
     await prisma.user.create({
-      data: { email, password }
+      data: { email, password },
     });
 
     res.json({ message: "Signup success" });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Signup error" });
   }
 });
-
 
 // ================= LOGIN =================
 app.post("/login", async (req, res) => {
@@ -52,7 +45,7 @@ app.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (!user || user.password !== password) {
@@ -62,15 +55,12 @@ app.post("/login", async (req, res) => {
     const token = jwt.sign({ email }, SECRET);
 
     res.json({ token });
-
   } catch (err) {
     console.error("LOGIN ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-
-// ================= SAVE =================
 // ================= SAVE =================
 app.post("/save", async (req, res) => {
   try {
@@ -80,12 +70,7 @@ app.post("/save", async (req, res) => {
       return res.status(400).json({ message: "Missing data" });
     }
 
-    let decoded;
-    try {
-      decoded = jwt.verify(token, SECRET);
-    } catch (err) {
-      return res.status(401).json({ message: "Invalid token" });
-    }
+    const decoded = jwt.verify(token, SECRET);
 
     await prisma.saved.create({
       data: {
@@ -97,13 +82,13 @@ app.post("/save", async (req, res) => {
       },
     });
 
-    res.json({ message: "Saved successfully" });
-
+    res.json({ message: "Saved" });
   } catch (err) {
     console.error("SAVE ERROR:", err);
     res.status(500).json({ message: "Save error" });
   }
 });
+
 // ================= GET SAVED =================
 app.post("/saved", async (req, res) => {
   try {
@@ -116,12 +101,12 @@ app.post("/saved", async (req, res) => {
     });
 
     res.json(data);
-
   } catch (err) {
     console.error("FETCH ERROR:", err);
     res.status(500).json({ message: "Fetch error" });
   }
 });
+
 // ================= REMOVE =================
 app.post("/remove", async (req, res) => {
   try {
@@ -132,20 +117,17 @@ app.post("/remove", async (req, res) => {
     await prisma.saved.deleteMany({
       where: {
         email: decoded.email,
-        name
-      }
+        name,
+      },
     });
 
     res.json({ message: "Removed" });
-
   } catch (err) {
-    console.error(err);
+    console.error("REMOVE ERROR:", err);
     res.status(500).json({ message: "Remove error" });
   }
 });
 
-
-// ================= START SERVER =================
 app.listen(5000, () => {
   console.log("Server running 🚀");
 });
