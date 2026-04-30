@@ -1,30 +1,25 @@
 const express = require("express");
 const cors = require("cors");
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 const app = express();
 
-// ✅ Middleware
 app.use(cors());
 app.use(express.json());
 
-// ✅ Root route (for testing)
+// TEST ROUTE
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
 
-
-// =======================
-// 🔐 SIGNUP
-// =======================
+// ================= SIGNUP =================
 app.post("/signup", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { name, email, password } = req.body;
 
-    // check user exists
     const existing = await prisma.user.findUnique({
       where: { email },
     });
@@ -33,29 +28,20 @@ app.post("/signup", async (req, res) => {
       return res.json({ message: "User already exists" });
     }
 
-    // hash password
     const hashed = await bcrypt.hash(password, 10);
 
-    // create user
     await prisma.user.create({
-      data: {
-        email,
-        password: hashed,
-      },
+      data: { name, email, password: hashed },
     });
 
     res.json({ message: "Signup successful" });
-
   } catch (err) {
-    console.error("Signup error:", err);
+    console.error(err);
     res.status(500).json({ message: "Signup failed" });
   }
 });
 
-
-// =======================
-// 🔐 LOGIN
-// =======================
+// ================= LOGIN =================
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -64,35 +50,24 @@ app.post("/login", async (req, res) => {
       where: { email },
     });
 
-    if (!user) {
-      return res.json({ message: "User not found" });
-    }
+    if (!user) return res.json({ message: "Invalid credentials" });
 
-    // compare password
-    const valid = await bcrypt.compare(password, user.password);
+    const match = await bcrypt.compare(password, user.password);
 
-    if (!valid) {
-      return res.json({ message: "Invalid credentials" });
-    }
+    if (!match) return res.json({ message: "Invalid credentials" });
 
-    // generate token
     const token = jwt.sign(
-      { email },
+      { email: user.email },
       process.env.JWT_SECRET
     );
 
-    res.json({ token });
-
+    res.json({ message: "Login successful", token });
   } catch (err) {
-    console.error("Login error:", err);
     res.status(500).json({ message: "Login failed" });
   }
 });
 
-
-// =======================
-// ❤️ SAVE COLLEGE
-// =======================
+// ================= SAVE =================
 app.post("/save", async (req, res) => {
   try {
     const { token, college } = req.body;
@@ -103,11 +78,10 @@ app.post("/save", async (req, res) => {
       where: { email: decoded.email },
     });
 
-    // prevent duplicate save
     const exists = await prisma.savedCollege.findFirst({
       where: {
-        name: college.name,
         userId: user.id,
+        name: college.name,
       },
     });
 
@@ -117,26 +91,22 @@ app.post("/save", async (req, res) => {
 
     await prisma.savedCollege.create({
       data: {
+        userId: user.id,
         name: college.name,
         location: college.location,
         fees: college.fees,
         rating: college.rating,
-        userId: user.id,
       },
     });
 
     res.json({ message: "Saved successfully" });
-
   } catch (err) {
-    console.error("Save error:", err);
-    res.status(500).json({ message: "Error saving" });
+    console.error(err);
+    res.status(500).json({ message: "Save failed" });
   }
 });
 
-
-// =======================
-// 📄 GET SAVED
-// =======================
+// ================= GET SAVED =================
 app.post("/saved", async (req, res) => {
   try {
     const { token } = req.body;
@@ -152,17 +122,12 @@ app.post("/saved", async (req, res) => {
     });
 
     res.json(saved);
-
   } catch (err) {
-    console.error("Fetch saved error:", err);
     res.status(500).json({ message: "Error fetching saved" });
   }
 });
 
-
-// =======================
-// ❌ REMOVE COLLEGE
-// =======================
+// ================= REMOVE =================
 app.post("/remove", async (req, res) => {
   try {
     const { token, name } = req.body;
@@ -175,23 +140,18 @@ app.post("/remove", async (req, res) => {
 
     await prisma.savedCollege.deleteMany({
       where: {
-        name,
         userId: user.id,
+        name,
       },
     });
 
     res.json({ message: "Removed successfully" });
-
   } catch (err) {
-    console.error("Remove error:", err);
     res.status(500).json({ message: "Error removing" });
   }
 });
 
-
-// =======================
-// 🚀 START SERVER
-// =======================
+// ================= START =================
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
