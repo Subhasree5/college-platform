@@ -5,84 +5,91 @@ import { useRouter } from "next/navigation";
 
 const API = "https://college-platform-938p.onrender.com";
 
-export default function Login() {
-const router = useRouter();
+export default function LoginPage() {
+  const router = useRouter();
 
-const [email, setEmail] = useState("");
-const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-const handleLogin = async () => {
-try {
-const res = await fetch("${API}/login", {
-method: "POST",
-headers: {
-"Content-Type": "application/json",
-},
-body: JSON.stringify({ email, password }),
-});
+  const handleLogin = async () => {
+    try {
+      const res = await fetch(`${API}/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-  const data = await res.json();
+      // 🔥 IMPORTANT FIX (prevents JSON crash)
+      const text = await res.text();
+      let data;
 
-  if (!res.ok) {
-    alert(data.message || "Login failed");
-    return;
-  }
+      try {
+        data = JSON.parse(text);
+      } catch {
+        alert("Server response invalid (check backend URL)");
+        return;
+      }
 
-  localStorage.setItem("token", data.token);
+      if (!res.ok) {
+        alert(data.message || "Login failed");
+        return;
+      }
 
-  alert("Login successful 🎉");
+      // ✅ STORE TOKEN
+      localStorage.setItem("token", data.token);
 
-  router.push("/dashboard");
-} catch (err) {
-  console.error(err);
-  alert("Server error");
-}
+      // ✅ REDIRECT
+      window.location.href = "/dashboard";
 
-};
+    } catch (err) {
+      console.error(err);
+      alert("Cannot connect to backend");
+    }
+  };
 
-return (
-<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-white">
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-white">
+      <div className="bg-white/80 backdrop-blur-md p-8 rounded-2xl shadow-xl w-[350px]">
 
-  <div className="bg-white p-8 rounded-2xl shadow-xl w-[350px]">
+        <h1 className="text-2xl font-bold text-center mb-6">
+          🔐 Login
+        </h1>
 
-    <h2 className="text-2xl font-bold mb-6 text-center">
-      🔐 Login
-    </h2>
+        <input
+          type="email"
+          placeholder="Enter email"
+          className="border p-3 w-full mb-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-    <input
-      type="email"
-      placeholder="Email"
-      className="w-full border p-3 rounded-xl mb-4"
-      value={email}
-      onChange={(e) => setEmail(e.target.value)}
-    />
+        <input
+          type="password"
+          placeholder="Enter password"
+          className="border p-3 w-full mb-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-    <input
-      type="password"
-      placeholder="Password"
-      className="w-full border p-3 rounded-xl mb-4"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-    />
+        <button
+          onClick={handleLogin}
+          className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-2 rounded-xl hover:opacity-90"
+        >
+          Login
+        </button>
 
-    <button
-      onClick={handleLogin}
-      className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-2 rounded-xl"
-    >
-      Login
-    </button>
-
-    <p className="mt-4 text-sm text-center">
-      Don't have an account?{" "}
-      <span
-        className="text-blue-500 cursor-pointer"
-        onClick={() => router.push("/signup")}
-      >
-        Signup
-      </span>
-    </p>
-  </div>
-</div>
-
-);
+        <p className="text-center text-sm mt-4">
+          Don’t have an account?{" "}
+          <span
+            className="text-blue-500 cursor-pointer"
+            onClick={() => router.push("/signup")}
+          >
+            Signup
+          </span>
+        </p>
+      </div>
+    </div>
+  );
 }
