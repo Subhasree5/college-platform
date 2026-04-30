@@ -17,57 +17,45 @@ const SECRET = process.env.JWT_SECRET;
 // ======================
 // 🔐 SIGNUP
 // ======================
+// SIGNUP
 app.post("/signup", async (req, res) => {
   const { email, password } = req.body;
 
-  try {
-    const existing = await prisma.user.findUnique({
-      where: { email },
-    });
+  const existing = await prisma.user.findUnique({
+    where: { email },
+  });
 
-    if (existing) {
-      return res.json({ message: "User already exists" });
-    }
-
-    const hashed = await bcrypt.hash(password, 10);
-
-    await prisma.user.create({
-      data: { email, password: hashed },
-    });
-
-    res.json({ message: "Signup successful" });
-  } catch (err) {
-    console.error(err);
-    res.json({ message: "Signup error" });
+  if (existing) {
+    return res.json({ message: "User already exists" });
   }
+
+  const hashed = await bcrypt.hash(password, 10);
+
+  await prisma.user.create({
+    data: { email, password: hashed },
+  });
+
+  res.json({ message: "Signup successful" });
 });
 
-// ======================
-// 🔐 LOGIN
-// ======================
+// LOGIN
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  try {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
 
-    if (!user) return res.json({ message: "User not found" });
+  if (!user) return res.json({ message: "User not found" });
 
-    const valid = await bcrypt.compare(password, user.password);
+  const valid = await bcrypt.compare(password, user.password);
 
-    if (!valid) return res.json({ message: "Wrong password" });
+  if (!valid) return res.json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ email }, SECRET);
+  const token = jwt.sign({ email }, process.env.JWT_SECRET);
 
-    res.json({ token });
-  } catch (err) {
-    console.error(err);
-    res.json({ message: "Login error" });
-  }
+  res.json({ token });
 });
-
 // ======================
 // ❤️ SAVE COLLEGE (FIXED)
 // ======================
