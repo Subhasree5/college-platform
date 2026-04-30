@@ -1,78 +1,58 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Link from "next/link";
-import { API_URL } from "@/lib/api";
 
-export default function LoginPage() {
+const API = "https://college-platform-938p.onrender.com";
+
+export default function Login() {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [show, setShow] = useState(false);
 
   const handleLogin = async () => {
     try {
-      const res = await fetch(`${API_URL}/login`, {
+      const res = await fetch(`${API}/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
 
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        window.location.href = "/dashboard";
-      } else {
-        alert(data.message);
+      if (!res.ok) {
+        alert(data.message || "Login failed");
+        return;
       }
-    } catch (e) {
-      alert("Login failed");
-      console.error(e);
+
+      // ✅ SAVE TOKEN
+      localStorage.setItem("token", data.token);
+
+      // ✅ REDIRECT
+      router.push("/dashboard");
+
+    } catch (err) {
+      console.error(err);
+      alert("Server error");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-orange-100 via-pink-100 to-yellow-100">
-      <div className="bg-white p-6 rounded-xl shadow w-80">
-        <h2 className="text-xl font-semibold mb-4 text-center">Login</h2>
+    <div className="p-6">
+      <input
+        placeholder="Email"
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        onChange={(e) => setPassword(e.target.value)}
+      />
 
-        <input
-          type="email"
-          placeholder="Email"
-          className="w-full p-2 border mb-3 rounded"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <div className="relative mb-3">
-          <input
-            type={show ? "text" : "password"}
-            placeholder="Password"
-            className="w-full p-2 border rounded"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <span
-            onClick={() => setShow(!show)}
-            className="absolute right-3 top-2 cursor-pointer"
-          >
-            👁
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleLogin}
-          className="w-full bg-gradient-to-r from-orange-400 to-pink-500 text-white py-2 rounded"
-        >
-          Login
-        </button>
-
-        <p className="text-sm text-center mt-3">
-          Don't have an account?{" "}
-          <Link href="/signup" className="text-blue-500">Signup</Link>
-        </p>
-      </div>
+      <button onClick={handleLogin}>Login</button>
     </div>
   );
 }
