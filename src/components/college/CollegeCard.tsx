@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 type Props = {
   name: string;
   location: string;
-  fees: string;
+  fees: number; // ✅ FIXED
   rating: number;
   onSelect?: () => void;
   onSave?: () => void;
@@ -37,7 +37,7 @@ export default function CollegeCard({
       {/* Fees + Rating */}
       <div className="flex justify-between items-center mt-5">
         <span className="text-orange-500 font-semibold text-lg">
-          {fees}
+          ₹{fees} {/* ✅ FIXED */}
         </span>
 
         <span className="text-yellow-500 font-semibold">
@@ -49,7 +49,7 @@ export default function CollegeCard({
       <div className="flex gap-2 mt-4">
         <button
           onClick={(e) => {
-            e.stopPropagation(); // 🚀 prevents navigation
+            e.stopPropagation();
             onSelect?.();
           }}
           className={`w-1/2 py-2 rounded-lg text-white font-medium ${
@@ -63,7 +63,7 @@ export default function CollegeCard({
 
         <button
           onClick={(e) => {
-            e.stopPropagation(); // 🚀 prevents navigation
+            e.stopPropagation();
             onSave?.();
           }}
           className="w-1/2 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"

@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [maxFees, setMaxFees] = useState("");
   const [selected, setSelected] = useState<any[]>([]);
 
+  // 🔍 FILTER
   const filtered = colleges.filter((c) => {
     return (
       c.name.toLowerCase().includes(search.toLowerCase()) &&
@@ -26,6 +27,7 @@ export default function Dashboard() {
     );
   });
 
+  // 🔄 SELECT
   const handleSelect = (college: any) => {
     const exists = selected.find((c) => c.name === college.name);
 
@@ -40,6 +42,7 @@ export default function Dashboard() {
     }
   };
 
+  // ❤️ SAVE
   const handleSave = async (college: any) => {
     const token = localStorage.getItem("token");
 
@@ -48,25 +51,27 @@ export default function Dashboard() {
       return;
     }
 
-    const res = await fetch("http://localhost:5000/save", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ token, college }),
-    });
+    try {
+      const res = await fetch("http://localhost:5000/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token, college }),
+      });
 
-    const data = await res.json();
-
-    console.log(data);
-
-    alert(data.message || "Saved!");
+      const data = await res.json();
+      alert(data.message || "Saved!");
+    } catch (err) {
+      alert("Error saving");
+    }
   };
 
   return (
     <MainLayout>
       <div className="min-h-screen p-6 bg-gradient-to-r from-orange-100 via-pink-100 to-yellow-100">
 
+        {/* SEARCH */}
         <input
           type="text"
           placeholder="Search colleges..."
@@ -75,6 +80,7 @@ export default function Dashboard() {
           className="w-full p-3 mb-4 rounded-lg border"
         />
 
+        {/* FILTERS */}
         <div className="flex gap-4 mb-6">
           <select
             value={locationFilter}
@@ -98,6 +104,7 @@ export default function Dashboard() {
           />
         </div>
 
+        {/* COMPARE TABLE */}
         {selected.length > 0 && (
           <table className="w-full bg-white mb-6 rounded">
             <thead>
@@ -113,7 +120,7 @@ export default function Dashboard() {
                 <tr key={i}>
                   <td>{c.name}</td>
                   <td>{c.location}</td>
-                  <td>{c.fees}</td>
+                  <td>₹{c.fees}</td>
                   <td>{c.rating}</td>
                 </tr>
               ))}
@@ -121,11 +128,15 @@ export default function Dashboard() {
           </table>
         )}
 
+        {/* CARDS */}
         <div className="grid md:grid-cols-3 gap-6">
           {filtered.map((c, i) => (
             <CollegeCard
               key={i}
-              {...c}
+              name={c.name}
+              location={c.location}
+              fees={c.fees} // ✅ FIXED
+              rating={c.rating}
               isSelected={selected.some((s) => s.name === c.name)}
               onSelect={() => handleSelect(c)}
               onSave={() => handleSave(c)}
