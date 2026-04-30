@@ -3,6 +3,7 @@
 import { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import CollegeCard from "@/components/college/CollegeCard";
+import { API_URL } from "@/lib/api";
 
 const colleges = [
   { name: "IIT Madras", location: "Chennai", fees: 200000, rating: 4.8 },
@@ -18,7 +19,7 @@ export default function Dashboard() {
   const [maxFees, setMaxFees] = useState("");
   const [selected, setSelected] = useState<any[]>([]);
 
-  // 🔍 FILTER
+  // 🔍 FILTER LOGIC
   const filtered = colleges.filter((c) => {
     return (
       c.name.toLowerCase().includes(search.toLowerCase()) &&
@@ -27,7 +28,7 @@ export default function Dashboard() {
     );
   });
 
-  // 🔄 SELECT
+  // ⚖️ SELECT / REMOVE
   const handleSelect = (college: any) => {
     const exists = selected.find((c) => c.name === college.name);
 
@@ -35,24 +36,24 @@ export default function Dashboard() {
       setSelected(selected.filter((c) => c.name !== college.name));
     } else {
       if (selected.length >= 3) {
-        alert("Max 3 colleges");
+        alert("You can compare up to 3 colleges only");
         return;
       }
       setSelected([...selected, college]);
     }
   };
 
-  // ❤️ SAVE
+  // ❤️ SAVE (CONNECTED TO BACKEND)
   const handleSave = async (college: any) => {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      alert("Login first");
+      alert("Please login first");
       return;
     }
 
     try {
-      const res = await fetch("http://localhost:5000/save", {
+      const res = await fetch(`${API_URL}/save`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -63,7 +64,7 @@ export default function Dashboard() {
       const data = await res.json();
       alert(data.message || "Saved!");
     } catch (err) {
-      alert("Error saving");
+      alert("Error saving college");
     }
   };
 
@@ -71,7 +72,7 @@ export default function Dashboard() {
     <MainLayout>
       <div className="min-h-screen p-6 bg-gradient-to-r from-orange-100 via-pink-100 to-yellow-100">
 
-        {/* SEARCH */}
+        {/* 🔍 SEARCH */}
         <input
           type="text"
           placeholder="Search colleges..."
@@ -80,7 +81,7 @@ export default function Dashboard() {
           className="w-full p-3 mb-4 rounded-lg border"
         />
 
-        {/* FILTERS */}
+        {/* 🎛 FILTERS */}
         <div className="flex gap-4 mb-6">
           <select
             value={locationFilter}
@@ -104,38 +105,40 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* COMPARE TABLE */}
+        {/* ⚖️ COMPARISON TABLE */}
         {selected.length > 0 && (
-          <table className="w-full bg-white mb-6 rounded">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Location</th>
-                <th>Fees</th>
-                <th>Rating</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selected.map((c, i) => (
-                <tr key={i}>
-                  <td>{c.name}</td>
-                  <td>{c.location}</td>
-                  <td>₹{c.fees}</td>
-                  <td>{c.rating}</td>
+          <div className="mb-6 overflow-auto">
+            <table className="w-full bg-white rounded shadow">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th className="p-2">Name</th>
+                  <th className="p-2">Location</th>
+                  <th className="p-2">Fees</th>
+                  <th className="p-2">Rating</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {selected.map((c, i) => (
+                  <tr key={i} className="text-center border-t">
+                    <td className="p-2">{c.name}</td>
+                    <td className="p-2">{c.location}</td>
+                    <td className="p-2">₹{c.fees}</td>
+                    <td className="p-2">⭐ {c.rating}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
-        {/* CARDS */}
+        {/* 🏫 COLLEGE CARDS */}
         <div className="grid md:grid-cols-3 gap-6">
           {filtered.map((c, i) => (
             <CollegeCard
               key={i}
               name={c.name}
               location={c.location}
-              fees={c.fees} // ✅ FIXED
+              fees={c.fees}
               rating={c.rating}
               isSelected={selected.some((s) => s.name === c.name)}
               onSelect={() => handleSelect(c)}
