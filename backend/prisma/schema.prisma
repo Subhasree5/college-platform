@@ -8,20 +8,13 @@ datasource db {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  email    String   @unique
+  id       Int    @id @default(autoincrement())
+  email    String @unique
   password String
-  saved    SavedCollege[]
 }
 
-model SavedCollege {
-  id       Int    @id @default(autoincrement())
-  name     String
-  location String
-  fees     Int     // ✅ FIXED (number)
-  rating   Float
-  userId   Int
-  user     User   @relation(fields: [userId], references: [id])
-
-  @@unique([name, userId])
+model Saved {
+  id      Int    @id @default(autoincrement())
+  email   String
+  college String
 }
