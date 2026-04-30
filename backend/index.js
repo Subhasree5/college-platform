@@ -1,28 +1,32 @@
 import express from "express";
 import cors from "cors";
 import { PrismaClient } from "@prisma/client";
+import jwt from "jsonwebtoken";
 
 const app = express();
 const prisma = new PrismaClient();
 
 app.use(cors({
-  origin:["http://localhost:3000", "https://college-platform-new.vercel.app"],
-  credentials: true
+  origin: "*"
 }));
+
 app.use(express.json());
 
-/* ================= ROOT ================= */
+const SECRET = "college_secret";
+
+// TEST ROUTE
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
 
-/* ================= SIGNUP ================= */
+
+// ================= SIGNUP =================
 app.post("/signup", async (req, res) => {
   try {
     const { email, password } = req.body;
 
     const existing = await prisma.user.findUnique({
-      where: { email },
+      where: { email }
     });
 
     if (existing) {
@@ -30,91 +34,112 @@ app.post("/signup", async (req, res) => {
     }
 
     await prisma.user.create({
-      data: { email, password },
+      data: { email, password }
     });
 
-    res.json({ message: "Signup successful" });
+    res.json({ message: "Signup success" });
+
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Signup failed" });
+    console.error(err);
+    res.status(500).json({ message: "Signup error" });
   }
 });
 
-/* ================= LOGIN ================= */
+
+// ================= LOGIN =================
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email }
     });
 
     if (!user || user.password !== password) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    res.json({ message: "Login success" });
+    const token = jwt.sign({ email }, SECRET);
+
+    res.json({ token });
+
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Login failed" });
+    console.error("LOGIN ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-/* ================= SAVE ================= */
+
+// ================= SAVE =================
 app.post("/save", async (req, res) => {
   try {
-    const { email, college } = req.body;
+    const { token, college } = req.body;
 
-    const exists = await prisma.saved.findFirst({
-      where: { email, college },
-    });
-
-    if (exists) {
-      return res.json({ message: "Already saved" });
-    }
+    const decoded = jwt.verify(token, SECRET);
 
     await prisma.saved.create({
-      data: { email, college },
+      data: {
+        email: decoded.email,
+        name: college.name,
+        location: college.location,
+        fees: college.fees,
+        rating: college.rating
+      }
     });
 
-    res.json({ message: "Saved successfully" });
+    res.json({ message: "Saved" });
+
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Save failed" });
+    console.error(err);
+    res.status(500).json({ message: "Save error" });
   }
 });
 
-/* ================= GET SAVED ================= */
-app.get("/saved/:email", async (req, res) => {
+
+// ================= GET SAVED =================
+app.post("/saved", async (req, res) => {
   try {
+    const { token } = req.body;
+
+    const decoded = jwt.verify(token, SECRET);
+
     const data = await prisma.saved.findMany({
-      where: { email: req.params.email },
+      where: { email: decoded.email }
     });
 
     res.json(data);
+
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Fetch failed" });
+    console.error(err);
+    res.status(500).json({ message: "Fetch error" });
   }
 });
 
-/* ================= REMOVE ================= */
-app.delete("/remove", async (req, res) => {
+
+// ================= REMOVE =================
+app.post("/remove", async (req, res) => {
   try {
-    const { email, college } = req.body;
+    const { token, name } = req.body;
+
+    const decoded = jwt.verify(token, SECRET);
 
     await prisma.saved.deleteMany({
-      where: { email, college },
+      where: {
+        email: decoded.email,
+        name
+      }
     });
 
-    res.json({ message: "Removed successfully" });
+    res.json({ message: "Removed" });
+
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Remove failed" });
+    console.error(err);
+    res.status(500).json({ message: "Remove error" });
   }
 });
 
-/* ================= START ================= */
+
+// ================= START SERVER =================
 app.listen(5000, () => {
   console.log("Server running 🚀");
 });
