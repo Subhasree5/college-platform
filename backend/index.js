@@ -81,23 +81,10 @@ app.post("/save", async (req, res) => {
     }
 
     let decoded;
-
     try {
       decoded = jwt.verify(token, SECRET);
     } catch (err) {
       return res.status(401).json({ message: "Invalid token" });
-    }
-
-    // prevent duplicate save
-    const exists = await prisma.saved.findFirst({
-      where: {
-        email: decoded.email,
-        name: college.name,
-      },
-    });
-
-    if (exists) {
-      return res.json({ message: "Already saved" });
     }
 
     await prisma.saved.create({
@@ -105,8 +92,8 @@ app.post("/save", async (req, res) => {
         email: decoded.email,
         name: college.name,
         location: college.location,
-        fees: college.fees,
-        rating: college.rating,
+        fees: Number(college.fees),
+        rating: Number(college.rating),
       },
     });
 
@@ -117,23 +104,12 @@ app.post("/save", async (req, res) => {
     res.status(500).json({ message: "Save error" });
   }
 });
-
 // ================= GET SAVED =================
 app.post("/saved", async (req, res) => {
   try {
     const { token } = req.body;
 
-    if (!token) {
-      return res.status(400).json({ message: "No token" });
-    }
-
-    let decoded;
-
-    try {
-      decoded = jwt.verify(token, SECRET);
-    } catch {
-      return res.status(401).json({ message: "Invalid token" });
-    }
+    const decoded = jwt.verify(token, SECRET);
 
     const data = await prisma.saved.findMany({
       where: { email: decoded.email },
