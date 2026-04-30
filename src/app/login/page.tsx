@@ -1,58 +1,88 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const API = "https://college-platform-938p.onrender.com";
 
 export default function Login() {
-  const router = useRouter();
+const router = useRouter();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
-    try {
-      const res = await fetch(`${API}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+const handleLogin = async () => {
+try {
+const res = await fetch("${API}/login", {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+},
+body: JSON.stringify({ email, password }),
+});
 
-      const data = await res.json();
+  const data = await res.json();
 
-      if (!res.ok) {
-        alert(data.message || "Login failed");
-        return;
-      }
+  if (!res.ok) {
+    alert(data.message || "Login failed");
+    return;
+  }
 
-      // ✅ SAVE TOKEN
-      localStorage.setItem("token", data.token);
+  localStorage.setItem("token", data.token);
 
-      // ✅ REDIRECT
-      router.push("/dashboard");
+  alert("Login successful 🎉");
 
-    } catch (err) {
-      console.error(err);
-      alert("Server error");
-    }
-  };
+  router.push("/dashboard");
+} catch (err) {
+  console.error(err);
+  alert("Server error");
+}
 
-  return (
-    <div className="p-6">
-      <input
-        placeholder="Email"
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        onChange={(e) => setPassword(e.target.value)}
-      />
+};
 
-      <button onClick={handleLogin}>Login</button>
-    </div>
-  );
+return (
+<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-white">
+
+  <div className="bg-white p-8 rounded-2xl shadow-xl w-[350px]">
+
+    <h2 className="text-2xl font-bold mb-6 text-center">
+      🔐 Login
+    </h2>
+
+    <input
+      type="email"
+      placeholder="Email"
+      className="w-full border p-3 rounded-xl mb-4"
+      value={email}
+      onChange={(e) => setEmail(e.target.value)}
+    />
+
+    <input
+      type="password"
+      placeholder="Password"
+      className="w-full border p-3 rounded-xl mb-4"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+    />
+
+    <button
+      onClick={handleLogin}
+      className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-2 rounded-xl"
+    >
+      Login
+    </button>
+
+    <p className="mt-4 text-sm text-center">
+      Don't have an account?{" "}
+      <span
+        className="text-blue-500 cursor-pointer"
+        onClick={() => router.push("/signup")}
+      >
+        Signup
+      </span>
+    </p>
+  </div>
+</div>
+
+);
 }
